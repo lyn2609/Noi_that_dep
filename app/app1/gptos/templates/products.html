@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Sản Phẩm - Nội Thất Đẹp{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{% url 'home' %}">Trang Chủ</a> &gt; Sản Phẩm
+  </div>
+</div>
+
+<section class="product-page">
+  <div class="container">
+    <div class="product-page-content">
+      <!-- Sidebar lọc -->
+      <aside class="product-filters">
+        <div class="filter-group">
+          <h3>Danh Mục</h3>
+          <ul class="filter-list">
+            <li><a href="{% url 'products' %}">Tất cả</a></li>
+            <li><a href="{% url 'products' %}?category=sofa">Sofa</a></li>
+            <li><a href="{% url 'products' %}?category=ban">Bàn</a></li>
+            <li><a href="{% url 'products' %}?category=giuong">Giường</a></li>
+            <li><a href="{% url 'products' %}?category=ke">Kệ</a></li>
+            <li><a href="{% url 'products' %}?category=ghe">Ghế</a></li>
+          </ul>
+        </div>
+            <!-- ===== Thêm phần lọc giá ở đây ===== -->
+        <form method="get" class="filter-group">
+        <h3>Giá</h3>
+        <input type="range" name="max_price" min="0" max="50000000" step="500000" 
+                value="{{ request.GET.max_price|default:50000000 }}"
+                oninput="document.getElementById('price-value').innerText=this.value">
+        <p>Tối đa: <span id="price-value">{{ request.GET.max_price|default:50000000 }}</span> ₫</p>
+        {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+        {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+        <button type="submit" class="btn btn-secondary">Lọc</button>
+        </form>
+
+        <!-- ===== Thêm phần sắp xếp ở đây ===== -->
+        <form method="get" class="filter-group">
+        <h3>Sắp Xếp</h3>
+        <select name="sort" onchange="this.form.submit()">
+            <option value="" {% if not request.GET.sort %}selected{% endif %}>Mặc định</option>
+            <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Giá tăng dần</option>
+            <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Giá giảm dần</option>
+            <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>Tên A → Z</option>
+            <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>Tên Z → A</option>
+        </select>
+        {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+        {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+        {% if request.GET.max_price %}<input type="hidden" name="max_price" value="{{ request.GET.max_price }}">{% endif %}
+        </form>
+      </aside>
+
+      <!-- Grid -->
+      <div class="product-main-content">
+        <div class="product-header">
+          <h1 id="page-title">
+            {% if search %}Kết quả cho "{{ search }}"
+            {% elif category %}Danh mục: {{ category|title }}
+            {% else %}Tất Cả Sản Phẩm{% endif %}
+          </h1>
+          <div class="results-info">
+            <span>Hiển thị {{ page_obj.paginator.count }} sản phẩm</span>
+          </div>
+        </div>
+
+        <div class="products-grid">
+          {% for p in page_obj %}
+          <div class="product-card">
+            <div class="product-image">
+              {% with img=p.images.first %}
+                {% if img %}
+                  <img src="{{ img.url }}" alt="{{ p.name }}">
+                {% else %}
+                  <img src="{% static 'assets/img/default.jpg' %}" alt="{{ p.name }}">
+                {% endif %}
+              {% endwith %}
+              <div class="product-overlay">
+                <a href="{% url 'add_to_cart' p.id %}" class="btn btn-secondary">
+                  <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
+                </a>
+                {% if p.id %}
+                  <a href="{% url 'product_detail' p.id %}" class="btn btn-primary">Xem Chi Tiết</a>
+                {% endif %}
+              </div>
+            </div>
+            <div class="product-info">
+              <h3>{{ p.name }}</h3>
+              <p class="product-price">{{ p.price|floatformat:0|intcomma }}₫</p>
+            </div>
+          </div>
+          {% empty %}
+            <p class="no-products">Không tìm thấy sản phẩm phù hợp.</p>
+          {% endfor %}
+        </div>
+
+        <!-- Phân trang -->
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+          {% if page_obj.has_previous %}
+            <a class="btn btn-secondary" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{search}}{% endif %}{% if category %}&category={{category}}{% endif %}">
+              <i class="fas fa-chevron-left"></i> Trước
+            </a>
+          {% endif %}
+
+          <span class="page-numbers">
+            Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+          </span>
+
+          {% if page_obj.has_next %}
+            <a class="btn btn-secondary" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{search}}{% endif %}{% if category %}&category={{category}}{% endif %}">
+              Sau <i class="fas fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

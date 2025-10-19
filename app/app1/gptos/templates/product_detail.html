@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ product.name }} - Nội Thất Đẹp{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{% url 'home' %}">Trang Chủ</a> &gt;
+    <a href="{% url 'products' %}">Sản Phẩm</a> &gt; {{ product.name }}
+  </div>
+</div>
+
+<section class="product-detail-page">
+  <div class="container">
+    <div class="product-detail-content">
+
+      <!-- Hình ảnh -->
+      <div class="product-detail-images">
+        <div class="product-main-image">
+          {% with first=product.images.first %}
+            {% if first %}
+              <img src="{{ first.url }}" alt="{{ product.name }}" id="main-product-image">
+            {% else %}
+              <img src="{% static 'assets/img/default.jpg' %}" alt="{{ product.name }}" id="main-product-image">
+            {% endif %}
+          {% endwith %}
+        </div>
+
+        <div class="product-thumbnails">
+          {% for img in product.images.all %}
+            <div class="thumbnail {% if forloop.first %}active{% endif %}"
+                 onclick="swapMainImage('{{ img.url }}', this)">
+              <img src="{{ img.url }}" alt="{{ product.name }}">
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Thông tin -->
+      <div class="product-detail-info">
+        <h1 class="pd-title">{{ product.name }}</h1>
+        <div class="product-detail-price">{{ product.price|floatformat:0|intcomma }}₫</div>
+
+        {% if product.short_description %}
+          <p class="text-muted">{{ product.short_description }}</p>
+        {% endif %}
+
+        <!-- Số lượng + giỏ hàng -->
+        <div class="quantity-section">
+          <label for="qty-input">Số lượng:</label>
+          <div class="quantity-controls">
+            <button type="button" class="qty-btn" id="qty-minus">−</button>
+            <input type="number" id="qty-input" value="1" min="1">
+            <button type="button" class="qty-btn" id="qty-plus">+</button>
+          </div>
+        </div>
+        <div class="action-buttons" style="display: flex; gap: 14px; margin-top: 20px;">
+
+          <!-- Nút thêm vào giỏ hàng -->
+          <button id="btn-add-to-cart" class="btn-cart">
+            <i class="fas fa-shopping-cart"></i> THÊM VÀO GIỎ HÀNG
+          </button>
+
+          <!-- Nút mua ngay -->
+          <form method="get" action="{% url 'buy_now' product.id %}" id="buy-now-form" style="display:inline;">
+            <input type="hidden" name="qty" id="buy-now-qty" value="1">
+            <button type="submit" class="btn-buy-now">MUA NGAY</button>
+          </form>
+        </div>
+        <!-- Thông số kỹ thuật -->
+        <div class="product-specifications">
+          <h3>Thông số kỹ thuật</h3>
+          <ul>
+            {% if product.dimensions %}<li><strong>Kích thước:</strong> {{ product.dimensions }}</li>{% endif %}
+            {% if product.material %}<li><strong>Chất liệu:</strong> {{ product.material }}</li>{% endif %}
+            {% if product.warranty %}<li><strong>Bảo hành:</strong> {{ product.warranty }}</li>{% endif %}
+          </ul>
+        </div>
+
+        <!-- Tính năng nổi bật -->
+        <div class="product-features">
+          <h3>Tính năng nổi bật</h3>
+          {% with feats=product.features_list %}
+            {% if feats %}
+              <ul>
+                {% for f in feats %}<li>{{ f }}</li>{% endfor %}
+              </ul>
+            {% elif product.features %}
+              <p>{{ product.features }}</p>
+            {% else %}
+              <p>—</p>
+            {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="related-products">
+  <div class="container">
+    <h2 class="section-title">Sản Phẩm Liên Quan</h2>
+    <div class="products-grid">
+      {% for p in related %}
+      <div class="product-card">
+        <div class="product-image">
+          {% with img=p.images.first %}
+            {% if img %}
+              <img src="{{ img.url }}" alt="{{ p.name }}">
+            {% else %}
+              <img src="{% static 'assets/img/default.jpg' %}" alt="{{ p.name }}">
+            {% endif %}
+          {% endwith %}
+          <div class="product-overlay">
+            <a href="{% url 'add_to_cart' p.id %}" class="btn btn-secondary">
+              <i class="fas fa-shopping-cart"></i> Thêm vào giỏ
+            </a>
+            <a href="{% url 'product_detail' p.id %}" class="btn btn-primary">Xem Chi Tiết</a>
+          </div>
+        </div>
+        <div class="product-info">
+          <h3>{{ p.name }}</h3>
+          <p class="product-price">{{ p.price|floatformat:0|intcomma }}₫</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- JS cho +/- số lượng & đổi ảnh -->
+<script>
+(function () {
+  const input = document.getElementById('qty-input');
+  const minus = document.getElementById('qty-minus');
+  const plus  = document.getElementById('qty-plus');
+  const buyNowQty = document.getElementById('buy-now-qty');
+
+  // Tăng giảm số lượng
+  minus.addEventListener('click', () => {
+    let n = parseInt(input.value || '1', 10);
+    n = Math.max(1, n - 1);
+    input.value = n;
+    buyNowQty.value = n; // đồng bộ với hidden input của MUA NGAY
+  });
+
+  plus.addEventListener('click', () => {
+    let n = parseInt(input.value || '1', 10);
+    n = Math.max(1, n + 1);
+    input.value = n;
+    buyNowQty.value = n;
+  });
+
+  input.addEventListener('change', () => {
+    let n = parseInt(input.value || '1', 10);
+    if (n <= 0 || isNaN(n)) n = 1;
+    input.value = n;
+    buyNowQty.value = n;
+  });
+
+  // Thêm vào giỏ hàng
+  document.getElementById('btn-add-to-cart').addEventListener('click', () => {
+    const qty = Math.max(1, parseInt(input.value || '1', 10));
+    window.location.href = "{% url 'add_to_cart' product.id %}" + "?qty=" + qty;
+  });
+
+  // Đổi ảnh sản phẩm
+  window.swapMainImage = function (src, el) {
+    const img = document.getElementById('main-product-image');
+    if (img) img.src = src;
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+  };
+})();
+</script>
+
+<!--đã sửa-->
+
+<script>
+// Hàm lấy CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Khi trang load xong
+document.addEventListener('DOMContentLoaded', function() {
+    // Tìm tất cả link đến giỏ hàng (trong header, menu, v.v.)
+    const cartLinks = document.querySelectorAll('a[href*="cart"], a[href*="view_cart"]');
+    
+    cartLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Gọi API để xóa session mua ngay
+            fetch("/clear-buy-now/", {  // Sẽ thêm URL này sau
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie('csrftoken'),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({})
+            }).catch(() => {}); // Không cần xử lý lỗi
+        });
+    });
+});
+</script>
+{% endblock %}
+
+

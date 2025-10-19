@@ -1,0 +1,19 @@
+# Python / Django cache
+__pycache__/
+*.pyc
+*.log
+
+# Virtual environment
+venv/
+env/
+
+# Environment variables
+.env
+*.env
+
+# Django migrations cache
+*/migrations/__pycache__/
+
+# MySQL dumps
+database/*.sql
+!database_backup.sql

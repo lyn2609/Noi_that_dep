@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Đặt hàng thành công{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/checkout_success.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+<div class="order-success">
+  <div class="success-card">
+    <div class="success-icon">
+      ✅
+    </div>
+
+    <h2>🎉 Đặt hàng thành công!</h2>
+
+    <p><strong>Mã đơn hàng:</strong> 
+      <span class="order-code">{{ order.order_number }}</span>
+    </p>
+
+    <p><strong>Tổng tiền:</strong> 
+      <span class="order-total">{{ formatted_total }}₫</span>
+    </p>
+
+    <p>Cảm ơn bạn đã mua hàng tại <strong>Nội Thất Đẹp</strong>.</p>
+
+    <a href="{% url 'home' %}" class="btn-home">Về trang chủ</a>
+  </div>
+</div>
+{% endblock %}

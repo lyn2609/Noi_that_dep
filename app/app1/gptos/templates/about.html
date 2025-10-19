@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giới Thiệu - Nội Thất Đẹp</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/reset.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-top">
+        <div class="logo">
+          <h1><a href="{% url 'home' %}">NỘI THẤT ĐẸP</a></h1>
+        </div>
+
+        <!-- Actions (Tìm kiếm + Giỏ hàng + Người dùng) -->
+        <div class="header-actions">
+          <!-- Cart -->
+          <div class="cart-icon">
+            <a href="{% url 'view_cart' %}">
+                <i class="fa fa-shopping-cart"></i>
+            </a>
+          </div>
+
+          <!-- User -->
+            <div class="user-menu">
+            {% if request.user.is_authenticated %}
+                <div class="dropdown">
+                <button class="user-dropdown-btn" onclick="toggleDropdown(event)">
+                    <i class="fa fa-user-circle"></i>
+                    <span>Xin chào, {{ request.user.username }}</span>
+                    <i class="fa fa-caret-down"></i>
+                </button>
+                <div class="dropdown-content" id="userDropdown">
+                    <a href="{% url 'logout' %}"><i class="fa fa-sign-out-alt"></i> Đăng xuất</a>
+                </div>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="auth-link">Đăng nhập</a>
+                <span class="divider">|</span>
+                <a href="{% url 'register' %}" class="auth-link">Đăng ký</a>
+            {% endif %}
+            </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="main-nav">
+        <ul class="nav-menu">
+          <li><a href="{% url 'home' %}">Trang Chủ</a></li>
+          <li><a href="{% url 'products' %}">Sản Phẩm</a></li>
+          <li><a href="{% url 'about' %}">Giới Thiệu</a></li>
+          <li><a href="{% url 'contact' %}">Liên Hệ</a></li>
+          {% comment %} <li><a href="{% url 'view_cart' %}">Giỏ Hàng</a></li> {% endcomment %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <div class="container">
+            <a href="{% url 'home' %}">Trang Chủ</a> &gt; Giới Thiệu
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="about-hero">
+        <div class="container">
+            <div class="about-hero-content">
+                <h1>Về Nội Thất Đẹp</h1>
+                <p>Chuyên cung cấp nội thất chất lượng cao, thiết kế hiện đại cho không gian sống hoàn hảo</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Company Story -->
+    <section class="company-story">
+        <div class="container">
+            <div class="story-content">
+                <div class="story-image">
+                    <img src="{% static 'assets/img/about-page.jpg' %}" alt="Về Chúng Tôi">
+                </div>
+                <div class="story-text">
+                    <h2>Câu Chuyện Của Chúng Tôi</h2>
+                    <p>Nội Thất Đẹp được thành lập vào năm 2014 với sứ mệnh mang đến những sản phẩm nội thất chất lượng cao, thiết kế hiện đại và sang trọng cho mọi không gian sống.</p>
+                    <p>Với hơn 10 năm kinh nghiệm trong ngành, chúng tôi đã phục vụ hàng nghìn khách hàng trên khắp cả nước, từ các hộ gia đình đến các dự án thương mại lớn.</p>
+                    <p>Chúng tôi tin rằng nội thất không chỉ là đồ dùng mà còn là yếu tố tạo nên phong cách sống và thể hiện cá tính của mỗi người.</p>
+                    <div class="story-highlights">
+                        <div class="highlight-item"><i class="fas fa-check-circle"></i><span>Hơn 5000 khách hàng hài lòng</span></div>
+                        <div class="highlight-item"><i class="fas fa-check-circle"></i><span>200+ mẫu sản phẩm đa dạng</span></div>
+                        <div class="highlight-item"><i class="fas fa-check-circle"></i><span>Bảo hành lên đến 2 năm</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission Vision -->
+    <section class="mission-vision">
+        <div class="container">
+            <div class="mv-grid">
+                <div class="mv-item">
+                    <div class="mv-icon"><i class="fas fa-eye"></i></div>
+                    <h3>Tầm Nhìn</h3>
+                    <p>Trở thành thương hiệu nội thất hàng đầu Việt Nam, mang đến những giải pháp nội thất hoàn hảo...</p>
+                </div>
+                <div class="mv-item">
+                    <div class="mv-icon"><i class="fas fa-bullseye"></i></div>
+                    <h3>Sứ Mệnh</h3>
+                    <p>Mang đến những sản phẩm nội thất chất lượng, thiết kế tinh tế...</p>
+                </div>
+                <div class="mv-item">
+                    <div class="mv-icon"><i class="fas fa-heart"></i></div>
+                    <h3>Giá Trị Cốt Lõi</h3>
+                    <ul>
+                        <li><i class="fas fa-star"></i> Chất lượng vượt trội</li>
+                        <li><i class="fas fa-handshake"></i> Uy tín hàng đầu</li>
+                        <li><i class="fas fa-lightbulb"></i> Sáng tạo không ngừng</li>
+                        <li><i class="fas fa-users"></i> Khách hàng là trung tâm</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item"><i class="fas fa-calendar-alt"></i><div class="stat-number">10+</div><div class="stat-text">Năm Kinh Nghiệm</div></div>
+                <div class="stat-item"><i class="fas fa-users"></i><div class="stat-number">5000+</div><div class="stat-text">Khách Hàng Hài Lòng</div></div>
+                <div class="stat-item"><i class="fas fa-couch"></i><div class="stat-number">200+</div><div class="stat-text">Sản Phẩm</div></div>
+                <div class="stat-item"><i class="fas fa-user-tie"></i><div class="stat-number">50+</div><div class="stat-text">Nhân Viên</div></div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Team Section -->
+    <section class="team-section">
+        <div class="container">
+            <h2 class="section-title">Đội Ngũ Của Chúng Tôi</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="team-image">
+                        <img src="{% static 'assets/img/team1.jpg' %}" alt="Nguyễn Văn A">
+                    </div>
+                    <div class="team-info">
+                        <h3>Nguyễn Văn A</h3>
+                        <p class="team-position">Giám Đốc Điều Hành</p>
+                        <p class="team-desc">Hơn 15 năm kinh nghiệm trong ngành nội thất, từng dẫn dắt nhiều dự án lớn.</p>
+                        <div class="team-social">
+                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="team-member">
+                    <div class="team-image">
+                        <img src="{%static 'assets/img/team2.jpg' %}" alt="Trần Thị B">
+                    </div>
+                    <div class="team-info">
+                        <h3>Trần Thị B</h3>
+                        <p class="team-position">Trưởng Phòng Thiết Kế</p>
+                        <p class="team-desc">Kiến trúc sư tài năng, chuyên về thiết kế nội thất hiện đại.</p>
+                        <div class="team-social">
+                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#"><i class="fab fa-instagram"></i></a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="team-member">
+                    <div class="team-image">
+                        <img src="{%static 'assets/img/team3.jpg' %}" alt="Lê Văn C">
+                    </div>
+                    <div class="team-info">
+                        <h3>Lê Văn C</h3>
+                        <p class="team-position">Trưởng Phòng Kinh Doanh</p>
+                        <p class="team-desc">Chuyên gia trong lĩnh vực kinh doanh nội thất, am hiểu thị trường.</p>
+                        <div class="team-social">
+                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#"><i class="fab fa-twitter"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2 class="section-title">Khách Hàng Nói Gì Về Chúng Tôi</h2>
+            <div class="testimonials-slider">
+                <div class="testimonial-item">
+                    <div class="testimonial-quote">
+                        <i class="fas fa-quote-left"></i>
+                    </div>
+                    <div class="testimonial-content">
+                        <p>"Sản phẩm chất lượng vượt expectations! Dịch vụ tư vấn rất nhiệt tình và chuyên nghiệp. Không gian phòng khách của tôi trở nên sang trọng và hiện đại nhờ các sản phẩm từ Nội Thất Đẹp."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <img src="{% static 'assets/img/customer1.jpg' %}" alt="Nguyễn Minh Đức">
+                        </div>
+                        <div class="author-info">
+                            <h4>Nguyễn Minh Đức</h4>
+                            <p>Khách hàng VIP</p>
+                            <div class="rating">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="about-cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Bạn Đã Sẵn Sàng Cho Không Gian Mới?</h2>
+                <p>Khám phá bộ sưu tập nội thất của chúng tôi và biến ngôi nhà của bạn thành tổ ấm hoàn hảo.</p>
+                <a href="{% url 'products' %}" class="btn btn-primary">Mua Sắm Ngay</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>NỘI THẤT ĐẸP</h3>
+                    <p>Chuyên cung cấp nội thất chất lượng cao, thiết kế hiện đại cho không gian sống hoàn hảo.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>Liên Kết</h4>
+                    <ul>
+                        <li><a href="{% url 'home' %}">Trang Chủ</a></li>
+                        <li><a href="{% url 'products' %}">Sản Phẩm</a></li>
+                        <li><a href="{% url 'about' %}">Giới Thiệu</a></li>
+                        <li><a href="{% url 'contact' %}">Liên Hệ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Dịch Vụ</h4>
+                    <ul>
+                        <li><a href="#">Thiết Kế Nội Thất</a></li>
+                        <li><a href="#">Giao Hàng Toàn Quốc</a></li>
+                        <li><a href="#">Bảo Hành 2 Năm</a></li>
+                        <li><a href="#">Hỗ Trợ 24/7</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Liên Hệ</h4>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> 123 Đường ABC, Quận 1, TP.HCM</li>
+                        <li><i class="fas fa-phone"></i> 0123 456 789</li>
+                        <li><i class="fas fa-envelope"></i> info@noithatdep.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Nội Thất Đẹp. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Shopping Cart Sidebar -->
+    <div class="cart-sidebar" id="cart-sidebar">...</div>
+    <div class="overlay" id="overlay"></div>
+
+    <script src="{% static 'js/app.js' %}"></script>
+    <script>
+        // Search logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchButton = document.getElementById('search-button');
+            const searchInput = document.getElementById('search-input');
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm) {
+                    window.location.href = "{% url 'products' %}?search=" + encodeURIComponent(searchTerm);
+                }
+            }
+            if (searchButton && searchInput) {
+                searchButton.addEventListener('click', performSearch);
+                searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
+            }
+        });
+    </script>
+        <script>
+  function toggleDropdown(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById("userDropdown");
+    dropdown.classList.toggle("show");
+  }
+
+  // Đóng khi click ra ngoài
+  window.onclick = function(e) {
+    if (!e.target.closest('.dropdown')) {
+      const dropdown = document.getElementById("userDropdown");
+      if (dropdown) dropdown.classList.remove("show");
+    }
+  }
+  </script>
+</body>
+</html>

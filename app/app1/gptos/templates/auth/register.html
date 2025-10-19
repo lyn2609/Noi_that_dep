@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Đăng ký{% endblock %}
+
+{% block content %}
+<div class="signup-page">
+  <div class="signup-box">
+    <h2>Sign up</h2>
+
+    <!-- Hiển thị lỗi chung (nếu có) -->
+    {% if form.non_field_errors %}
+      <div class="form-errors">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="form-group">
+        <label for="id_username">Tên đăng nhập</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <div class="field-error">{{ form.username.errors }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Full name (nếu form bạn có) -->
+      {% if form.full_name %}
+      <div class="form-group">
+        <label for="id_full_name">Họ và tên</label>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}
+          <div class="field-error">{{ form.full_name.errors }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="id_email">Email</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <div class="field-error">{{ form.email.errors }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Password & Confirm -->
+      <div class="form-row">
+        <div class="form-group password-field">
+          <label for="id_password1">Mật khẩu</label>
+          <div class="password-wrapper">
+            {{ form.password1 }}
+            <span class="toggle-password" onclick="togglePassword('id_password1', this)">
+              <i class="fa fa-eye"></i>
+            </span>
+          </div>
+        </div>
+
+        <div class="form-group password-field">
+          <label for="id_password2">Xác nhận mật khẩu</label>
+          <div class="password-wrapper">
+            {{ form.password2 }}
+            <span class="toggle-password" onclick="togglePassword('id_password2', this)">
+              <i class="fa fa-eye"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Hộp điều kiện mật khẩu -->
+      <div class="help-box" aria-live="polite">
+        <div class="help-title">Mật khẩu cần đáp ứng:</div>
+        <ul class="rules">
+          <li id="rule-length"  class="rule invalid">Ít nhất 8 ký tự</li>
+          <li id="rule-similar" class="rule invalid">Không quá giống thông tin cá nhân (tên đăng nhập / họ tên / email)</li>
+          <li id="rule-common"  class="rule invalid">Không nằm trong danh sách mật khẩu phổ biến (vd: 123456, password…)</li>
+          <li id="rule-numeric" class="rule invalid">Không hoàn toàn là số</li>
+        </ul>
+      </div>
+
+      <button id="submit-btn" type="submit" class="btn-submit">Create Account</button>
+    </form>
+
+    <p class="login-link">or <a href="{% url 'login' %}">Log in</a></p>
+  </div>
+</div>
+
+<!-- Kiểm tra 4 điều kiện theo thời gian thực -->
+<script>
+(function () {
+  const $ = (sel) => document.querySelector(sel);
+  const username   = $('#id_username');
+  const fullName   = $('#id_full_name');  // có thể không tồn tại
+  const email      = $('#id_email');
+  const pwd1       = $('#id_password1');
+  const submitBtn  = $('#submit-btn');
+
+  const ruleLen    = $('#rule-length');
+  const ruleSimilar= $('#rule-similar');
+  const ruleCommon = $('#rule-common');
+  const ruleNumeric= $('#rule-numeric');
+
+  const commonSet = new Set([
+    '123456','123456789','12345678','111111','qwerty','password',
+    'abc123','123123','000000','iloveyou','admin'
+  ]);
+
+  function norm(x) { return (x || '').toLowerCase().trim(); }
+
+  function mark(ruleEl, ok) {
+    ruleEl.classList.toggle('valid', ok);
+    ruleEl.classList.toggle('invalid', !ok);
+  }
+
+  function check() {
+    const pwd  = (pwd1 && pwd1.value) || '';
+    const user = username ? norm(username.value) : '';
+    const mail = email ? norm(email.value) : '';
+    const name = fullName ? norm(fullName.value) : '';
+
+    // 1) Độ dài
+    const okLen = pwd.length >= 8;
+
+    // 2) Quá giống thông tin cá nhân
+    let similarParts = [];
+    if (user) similarParts.push(user);
+    if (mail) similarParts.push(mail.split('@')[0]);
+    if (name) similarParts = similarParts.concat(name.split(/\s+/).filter(p=>p.length>=3));
+    const okSimilar = !similarParts.some(p => p.length>=3 && pwd.toLowerCase().includes(p));
+
+    // 3) Mật khẩu phổ biến
+    const okCommon = !commonSet.has(pwd.toLowerCase());
+
+    // 4) Không hoàn toàn số
+    const okNumeric = !/^\d+$/.test(pwd);
+
+    mark(ruleLen, okLen);
+    mark(ruleSimilar, okSimilar);
+    mark(ruleCommon, okCommon);
+    mark(ruleNumeric, okNumeric);
+
+    // Bật/tắt nút submit (khuyến nghị UI; server vẫn kiểm tra lại)
+    const okAll = okLen && okSimilar && okCommon && okNumeric;
+    if (submitBtn) submitBtn.disabled = !okAll;
+  }
+
+  ['input','change','keyup'].forEach(evt => {
+    if (pwd1)    pwd1.addEventListener(evt, check);
+    if (username)username.addEventListener(evt, check);
+    if (email)   email.addEventListener(evt, check);
+    if (fullName)fullName.addEventListener(evt, check);
+  });
+
+  // chạy lần đầu
+  check();
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+<script>
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+  const icon = el.querySelector("i");
+  if (input.type === "password") {
+    input.type = "text";
+    icon.classList.remove("fa-eye");
+    icon.classList.add("fa-eye-slash");
+  } else {
+    input.type = "password";
+    icon.classList.remove("fa-eye-slash");
+    icon.classList.add("fa-eye");
+  }
+}
+</script>
+{% endblock %}

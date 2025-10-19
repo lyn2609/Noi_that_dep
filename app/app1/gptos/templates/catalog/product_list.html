@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Sản phẩm{% endblock %}
+
+{% block content %}
+<h2>Danh sách sản phẩm</h2>
+
+<div class="grid">
+  {% for p in products %}
+  <div class="card">
+    <!-- Ảnh sản phẩm -->
+    {% with thumb=p.images.first %}
+      {% if thumb %}
+        <img src="{{ thumb.url }}" alt="{{ thumb.alt|default:p.name }}" style="max-width:200px">
+      {% endif %}
+    {% endwith %}
+
+    <!-- Thông tin -->
+    <h3 class="product-name">{{ p.name }}</h3>
+    <p class="product-price">{{ p.price|floatformat:0 }}₫</p>
+    <!-- Nút thêm giỏ hàng -->
+    <a href="{% url 'add_to_cart' p.id %}" class="btn btn-primary">Thêm vào giỏ</a>
+  </div>
+  {% empty %}
+  <p>Chưa có sản phẩm nào.</p>
+  {% endfor %}
+</div>
+{% endblock %}

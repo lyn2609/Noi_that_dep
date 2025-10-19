@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Giỏ hàng - Nội Thất Đẹp{% endblock %}
+
+{% block content %}
+<div class="cart-page container py-4">
+  <h2 class="mb-4 fw-bold">🛍️ Giỏ hàng của bạn</h2>
+
+  {% if items %}
+  <form method="post" action="{% url 'update_cart' %}">
+    {% csrf_token %}
+    <!-- đã sửa thêm -->
+    <input type="hidden" name="from_cart" value="true">
+
+    <table class="table align-middle text-center border">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 5%"></th> <!-- Cột checkbox -->
+          <th style="width: 35%">Sản phẩm</th>
+          <th style="width: 15%">Đơn giá</th>
+          <th style="width: 15%">Số lượng</th>
+          <th style="width: 15%">Số tiền</th>
+          <th style="width: 15%">Thao tác</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in items %}
+        <tr>
+          <!-- Ô tick -->
+          <td>
+            <!-- đã sửa -->
+            <input type="checkbox" class="item-checkbox" name="selected_items" value="{{ row.product.id }}" checked>
+          </td>
+
+          <!-- Thông tin sản phẩm -->
+          <td class="text-start">
+            <div class="d-flex align-items-center gap-3">
+              {% with img=row.product.images.first %}
+                {% if img %}
+                  <img src="{{ img.url }}" alt="{{ row.product.name }}" style="width:80px; height:80px; object-fit:cover; border-radius:6px;">
+                {% else %}
+                  <img src="{% static 'assets/img/default.jpg' %}" alt="{{ row.product.name }}" style="width:80px; height:80px; object-fit:cover; border-radius:6px;">
+                {% endif %}
+              {% endwith %}
+              <div>
+                <div class="fw-semibold">{{ row.product.name }}</div>
+                <small class="text-muted">Mã SP: {{ row.product.id }}</small>
+              </div>
+            </div>
+          </td>
+
+          <!-- Đơn giá -->
+          <td class="price">{{ row.product.price|floatformat:0|intcomma }}₫</td>
+          
+          <!-- Số lượng -->
+          <td>
+            <div class="d-inline-flex align-items-center justify-content-center">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty({{ row.product.id }}, -1)">−</button>
+              <input type="number" name="qty_{{ row.product.id }}" value="{{ row.qty }}" min="1"
+                    class="form-control text-center mx-2" style="width:60px;">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQty({{ row.product.id }}, 1)">+</button>
+            </div>
+          </td>
+
+          <!-- Tổng tiền -->
+          <td class="text-danger fw-semibold subtotal">{{ row.subtotal|floatformat:0|intcomma }}₫</td>
+
+          <!-- Thao tác -->
+          <td>
+            <a href="{% url 'remove_from_cart' row.product.id %}" class="text-danger text-decoration-none">Xóa</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Footer giỏ hàng -->
+    <div class="cart-footer d-flex justify-content-between align-items-center mt-4 p-3 border-top sticky-footer">
+      <div class="cart-left d-flex align-items-center gap-4">
+        <input type="checkbox" id="selectAll" class="form-check-input big-checkbox">
+        <span class="select-all-text">Chọn tất cả</span>
+        <a href="#" class="text-danger text-decoration-none delete-link">Xóa</a>
+      </div>
+
+      <div class="cart-right d-flex align-items-center gap-4">
+        <div class="cart-total fw-semibold fs-5 mb-0">
+          Tổng cộng: <span id="totalPrice" class="text-danger fw-bold">0₫</span>
+        </div>
+          <!-- đã sửa -->
+          <button type="submit" name="go" value="checkout"
+            class="btn btn-danger px-4 py-2 fw-semibold checkout-btn"
+            style="font-size: 16px;"
+            onclick="return validateCheckout()">
+            THANH TOÁN
+        </button>
+      </div>
+    </div>
+  </form>
+
+  {% else %}
+  <div class="text-center py-5">
+    <img src="{% static 'assets/img/giohang.png' %}" alt="Giỏ hàng trống" class="empty-cart-img mb-3" style="width:200px;">
+    <h4>Giỏ hàng của bạn đang trống</h4>
+    <a href="{% url 'products' %}" class="btn btn-primary mt-3">Mua sắm ngay</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ====================== JAVASCRIPT ====================== -->
+<script>
+// --- CSRF: lấy từ cookie (theo docs Django) ---
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+// --- Tăng/giảm số lượng + cập nhật dòng & tổng ---
+function changeQty(id, delta) {
+  const input = document.querySelector(`[name="qty_${id}"]`);
+  const row = input.closest("tr");
+  // đã thêm dòng 
+  const checkbox = row.querySelector('.item-checkbox'); 
+
+
+  // Thêm class="price" cho cột đơn giá để lấy chắc chắn
+  const priceText = row.querySelector(".price").innerText.replace(/[^\d]/g, "");
+  const price = parseInt(priceText || '0');
+
+  let qty = parseInt(input.value) || 1;
+  qty = Math.max(1, qty + delta);
+  input.value = qty;
+
+  const subtotal = price * qty;
+  row.querySelector(".subtotal").innerText = subtotal.toLocaleString("vi-VN") + "₫";
+  
+  // đã sửa dòng: Chỉ cập nhật tổng nếu checkbox được chọn
+  if (checkbox.checked) {
+    updateTotal();
+  }
+}
+
+function updateTotal() {
+  let total = 0;
+  let hasSelectedItems = false;  // đã thêm dòng
+  document.querySelectorAll(".item-checkbox:checked").forEach(checkbox => {
+    hasSelectedItems = true;  // đã thêm dòng
+    const row = checkbox.closest("tr");
+    const subtotalText = row.querySelector(".subtotal").innerText.replace(/[^\d]/g, "");
+    total += parseInt(subtotalText || '0');
+  });
+  document.getElementById("totalPrice").innerText = total.toLocaleString("vi-VN") + "₫";
+
+  // đã thêm: Disable nút thanh toán nếu không có sản phẩm nào được chọn
+  //const checkoutBtn = document.querySelector('.checkout-btn');
+  //if (checkoutBtn) {
+  //  checkoutBtn.disabled = !hasSelectedItems;
+  //  checkoutBtn.title = hasSelectedItems ? '' : 'Vui lòng chọn ít nhất một sản phẩm để thanh toán';
+  //}
+
+}
+
+// đã thêm: hàm kiểm tra này sau hàm updateTotal()
+function updateSelectAllCheckbox() {
+  const checkboxes = document.querySelectorAll(".item-checkbox");
+  const selectAllCheckbox = document.getElementById("selectAll");
+  
+  if (checkboxes.length === 0) {
+    selectAllCheckbox.checked = false;
+    selectAllCheckbox.disabled = true;
+    return;
+  }
+  
+  selectAllCheckbox.disabled = false;
+  
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+  
+  selectAllCheckbox.checked = allChecked;
+  selectAllCheckbox.indeterminate = someChecked && !allChecked;
+}
+// đã thêm
+function validateCheckout() {
+    const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+    const allItems = document.querySelectorAll(".item-checkbox");
+    
+    if (allItems.length === 0) {
+        alert('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.');
+        return false;
+    }
+    
+    if (selectedItems.length === 0) {
+        alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+        return false;
+    }
+    
+    return true;
+}
+
+// Chọn tất cả (thêm cập nhật checkbox)
+document.getElementById("selectAll").addEventListener("change", function() {
+  const checked = this.checked;
+  // đã sửa
+  document.querySelectorAll(".item-checkbox").forEach(cb => {
+    cb.checked = checked;
+    // Kích hoạt sự kiện change để cập nhật tổng
+    cb.dispatchEvent(new Event('change'));
+  });
+});
+
+// Tick từng dòng - đã thêm cập nhật selectAll
+document.querySelectorAll(".item-checkbox").forEach(cb => {
+  cb.addEventListener("change", function() {
+    updateTotal();
+    updateSelectAllCheckbox();  // đã thêm dòng
+  });
+});
+
+// Xoá các dòng đã chọn (AJAX -> xoá ở session)
+document.querySelector(".delete-link").addEventListener("click", function(e) {
+  e.preventDefault();
+  const checkedItems = document.querySelectorAll(".item-checkbox:checked");
+
+  if (checkedItems.length === 0) {
+    alert("Vui lòng chọn ít nhất một sản phẩm để xóa.");
+    return;
+  }
+
+  if (!confirm(`Bạn có chắc muốn xóa ${checkedItems.length} sản phẩm đã chọn không?`)) return;
+  
+  // đã sửa
+  const ids = Array.from(checkedItems).map(cb => cb.value);
+
+  // Dùng URLSearchParams để gửi dạng mảng product_ids[]
+  const params = new URLSearchParams();
+  ids.forEach(id => params.append('product_ids[]', id));
+
+  fetch("{% url 'remove_selected_from_cart' %}", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrftoken
+    },
+    body: params
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Xoá các <tr> đã tick trên giao diện
+      checkedItems.forEach(cb => cb.closest("tr").remove());
+      updateTotal();
+      document.getElementById("selectAll").checked = false;
+
+      // Nếu hết hàng -> render "giỏ hàng trống"
+      const remainingRows = document.querySelectorAll("tbody tr");
+      if (remainingRows.length === 0) {
+        document.querySelector(".cart-page").innerHTML = `
+          <div class="text-center py-5">
+            <img src="{% static 'assets/img/giohang.png' %}" alt="Giỏ hàng trống" class="empty-cart-img mb-3" style="width:200px;">
+            <h4>Giỏ hàng của bạn đang trống</h4>
+            <a href="{% url 'products' %}" class="btn btn-primary mt-3">MUA SẮM NGAY</a>
+          </div>
+        `;
+      }
+    } else {
+      alert("Không xoá được sản phẩm. Vui lòng thử lại.");
+    }
+  })
+  .catch(() => alert("Lỗi kết nối. Vui lòng thử lại."));
+});
+
+// đã thêm: Ngăn chặn thanh toán nếu không có sản phẩm nào được chọn
+document.querySelector('form').addEventListener('submit', function(e) {
+  const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+  const allItems = document.querySelectorAll(".item-checkbox");
+  const cartIsEmpty = allItems.length === 0;
+  
+  if (cartIsEmpty) {
+    e.preventDefault();
+    alert('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi thanh toán.');
+    return false;
+  }
+  
+  if (selectedItems.length === 0) {
+    e.preventDefault();
+    alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+    return false;
+  }
+  
+  // Nếu có sản phẩm được chọn, cho phép submit bình thường
+  // Form sẽ gửi đến update_cart và chuyển hướng đến checkout
+});
+
+// Khởi tạo tổng tiền khi trang load
+document.addEventListener('DOMContentLoaded', function() {
+  updateTotal();
+  updateSelectAllCheckbox(); // đã thêm
+});
+
+</script>
+
+
+{% endblock %}

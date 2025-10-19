@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Đăng nhập{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}?v=10">
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-container">
+    <h2 class="auth-title">Log in</h2>
+
+    {% if form.errors %}
+      <div class="form-errors">Tên đăng nhập hoặc mật khẩu không đúng.</div>
+    {% endif %}
+
+    <form method="post" class="auth-form">
+      {% csrf_token %}
+
+      <!-- USERNAME -->
+      <div class="icon-input">
+        <span class="input-icon"><i class="fa-regular fa-user"></i></span>
+        <input type="text" name="username" id="id_username" placeholder="Username" required>
+      </div>
+
+      <div class="icon-input">
+        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+        <input type="password" name="password" id="id_password" placeholder="Password" required>
+        <span class="toggle-password" onclick="togglePassword(this)">
+          <i class="fa-regular fa-eye"></i>
+        </span>
+      </div>
+      
+      <div class="auth-options">
+        <label><input type="checkbox" name="remember_me"> Remember Me</label>
+        <a href="#" class="forgot-password">Forgot Password?</a>
+      </div>
+
+      <button type="submit" class="btn-submit">Log in</button>
+
+      <p class="auth-footer">or <a href="{% url 'register' %}">Sign up</a></p>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
+<script>
+function togglePassword(el) {
+  const input = el.parentElement.querySelector('input');
+  const icon = el.querySelector('i');
+  if (input.type === "password") {
+    input.type = "text";
+    icon.classList.replace("fa-eye", "fa-eye-slash");
+  } else {
+    input.type = "password";
+    icon.classList.replace("fa-eye-slash", "fa-eye");
+  }
+}
+</script>
+{% endblock %}

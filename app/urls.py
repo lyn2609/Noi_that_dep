@@ -2,6 +2,7 @@
 
 from django.urls import path
 from . import views
+from . import auth
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -28,10 +29,11 @@ urlpatterns = [
     path('clear-buy-now/', views.clear_buy_now, name='clear_buy_now'),
 
     # Auth
-    path('login/', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    path('logout/', views.custom_logout, name='logout'),
-    path('register/', views.register, name='register'),
-
+    path('login/', auth.user_login, name='login'),
+    path('logout/', auth.user_logout, name='logout'),
+    path('register/', auth.user_register, name='register'),
+    path('dashboard/', auth.dashboard, name='dashboard'),
+    path('', auth.user_login, name='home'),  # Trang chủ
     # Checkout
     path('checkout/', views.checkout, name='checkout'),
     path('checkout/success/<str:order_number>/', views.checkout_success, name='checkout_success'),

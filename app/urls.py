@@ -25,16 +25,15 @@ urlpatterns = [
     path('cart/remove/<int:product_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('cart/update/', views.update_cart, name='update_cart'),
     path('cart/remove-selected/', views.remove_selected_from_cart, name='remove_selected_from_cart'),
-    # đã sửa thêm
     path('clear-buy-now/', views.clear_buy_now, name='clear_buy_now'),
+    path('cart/change-qty/<int:product_id>/', views.change_qty, name='change_qty'),
 
-    # Auth
-    path('login/', auth.user_login, name='login'),
-    path('logout/', auth.user_logout, name='logout'),
-    path('register/', auth.user_register, name='register'),
-    path('dashboard/', auth.dashboard, name='dashboard'),
-    path('', auth.user_login, name='home'),  # Trang chủ
-    # Checkout
+    # Auth (đăng nhập / đăng ký / đăng xuất)
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.custom_logout, name='logout'),
+    path('register/', views.register, name='register'),
+
+    # Checkout (thanh toán)
     path('checkout/', views.checkout, name='checkout'),
     path('checkout/success/<str:order_number>/', views.checkout_success, name='checkout_success'),
     path('my-orders/', views.my_orders, name='my_orders'),

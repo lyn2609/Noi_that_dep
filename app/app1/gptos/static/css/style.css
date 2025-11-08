@@ -3476,4 +3476,48 @@
   margin-right: 6px;
 }
 
+/* Giãn đều các cột trong bảng */
 
+/* Giãn đều toàn bộ cột */
+.table {
+  width: 100%;
+  table-layout: fixed; /* giúp chia đều chiều rộng các cột */
+  border-collapse: separate;
+  border-spacing: 0 10px; /* thêm khoảng cách dọc giữa các hàng */
+}
+
+/* Căn chỉnh từng cột */
+.table th,
+.table td {
+  vertical-align: middle;
+  text-align: center;
+  padding: 16px 20px; /* tăng padding cho thoáng */
+}
+
+/* Giãn cột sản phẩm rộng hơn */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 40%;
+  text-align: left;
+}
+
+/* Cột đơn giá, số lượng, số tiền, thao tác giãn đều */
+.table th:nth-child(3),
+.table th:nth-child(4),
+.table th:nth-child(5),
+.table th:nth-child(6) {
+  width: 15%;
+}
+
+/* Cho bảng nhìn rộng và thoáng hơn */
+.container {
+  max-width: 1300px; /* mặc định Bootstrap container ~1140px, ta tăng lên */
+}
+
+/* Nút và input số lượng vẫn giữ bố cục ngang đẹp */
+.qty-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}

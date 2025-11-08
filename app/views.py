@@ -14,6 +14,9 @@ from django.contrib.auth.decorators import login_required
 from .models import Product, Order, OrderItem, Address
 from .forms import RegisterForm, CheckoutForm
 from django.core.paginator import Paginator
+from .forms import CustomUserCreationForm
+from .forms import LoginForm
+from django.contrib.auth import authenticate, login
 
 
 # --------- Pages ----------
@@ -169,6 +172,32 @@ def update_cart(request):
     return redirect('view_cart')
 
 
+def change_qty(request, product_id):
+    """
+    Tăng hoặc giảm số lượng sản phẩm trong giỏ hàng (backend)
+    """
+    if request.method == "POST":
+        action = request.POST.get("action")  # "increase" hoặc "decrease"
+        cart = request.session.get("cart", {})  # Lấy giỏ hàng hiện tại
+        pid = str(product_id)
+        current_qty = int(cart.get(pid, 0))
+
+        if action == "increase":
+            current_qty += 1
+        elif action == "decrease":
+            current_qty = max(1, current_qty - 1)
+
+        cart[pid] = current_qty
+        request.session["cart"] = cart
+        request.session.modified = True
+
+        # ✅ nếu là AJAX (fetch)
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({"success": True, "new_qty": current_qty})
+        
+        return redirect('view_cart')
+
+
 def remove_selected_from_cart(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'invalid method'}, status=405)
@@ -217,14 +246,34 @@ def custom_logout(request):
 
 def register(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')
+            form.save()
+            return redirect('login')
     else:
-        form = RegisterForm()
+        form = CustomUserCreationForm()
     return render(request, 'auth/register.html', {'form': form})
+
+def login_view(request):
+    if request.method == "POST":
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            user = authenticate(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+            if user is not None:
+                login(request, user)
+                # Ghi nhớ đăng nhập
+                if request.POST.get("remember_me"):
+                    request.session.set_expiry(60 * 60 * 24 * 7)  # 7 ngày
+                else:
+                    request.session.set_expiry(0)  # Hết khi đóng trình duyệt
+                return redirect("index")
+    else:
+        form = LoginForm()
+
+    return render(request, "auth/login.html", {"form": form})
 
 
 # --------- Checkout ----------

@@ -109,6 +109,71 @@
   {% endif %}
 </div>
 
+<style>
+/* Căn chỉnh hàng số lượng cho đẹp và đều */
+.d-inline-flex.align-items-center.justify-content-center {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Nút + và − */
+.d-inline-flex.align-items-center.justify-content-center button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.d-inline-flex.align-items-center.justify-content-center button:hover {
+  background-color: #f7f7f7;
+  border-color: #999;
+}
+
+/* Ô nhập số lượng — căn giữa dọc + ngang tuyệt đối */
+.d-inline-flex.align-items-center.justify-content-center input[type="number"] {
+  width: 60px;
+  height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 18px;
+  text-align: center;
+  line-height: 40px; /* giúp chữ nằm giữa theo chiều dọc */
+  padding: 0;
+  margin: 0;
+  appearance: textfield; /* ẩn mũi tên tăng giảm của trình duyệt */
+}
+
+.d-inline-flex.align-items-center.justify-content-center input[type="number"]::-webkit-outer-spin-button,
+.d-inline-flex.align-items-center.justify-content-center input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.d-inline-flex.align-items-center.justify-content-center input[type="number"]:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 3px rgba(0,123,255,0.4);
+  outline: none;
+}
+
+/* Căn giữa hàng trong bảng */
+.table td {
+  vertical-align: middle;
+}
+</style>
+
+
+
 <!-- ====================== JAVASCRIPT ====================== -->
 <script>
 // --- CSRF: lấy từ cookie (theo docs Django) ---
@@ -130,28 +195,36 @@ const csrftoken = getCookie('csrftoken');
 
 // --- Tăng/giảm số lượng + cập nhật dòng & tổng ---
 function changeQty(id, delta) {
-  const input = document.querySelector(`[name="qty_${id}"]`);
-  const row = input.closest("tr");
-  // đã thêm dòng 
-  const checkbox = row.querySelector('.item-checkbox'); 
+  const action = delta > 0 ? "increase" : "decrease";
+  const csrftoken = getCookie('csrftoken');
 
+  fetch(`/cart/change-qty/${id}/`, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": csrftoken,
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    body: new URLSearchParams({ action })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // ✅ Cập nhật giao diện: thay đổi input + subtotal
+      const input = document.querySelector(`[name="qty_${id}"]`);
+      input.value = data.new_qty;
 
-  // Thêm class="price" cho cột đơn giá để lấy chắc chắn
-  const priceText = row.querySelector(".price").innerText.replace(/[^\d]/g, "");
-  const price = parseInt(priceText || '0');
+      const row = input.closest("tr");
+      const priceText = row.querySelector(".price").innerText.replace(/[^\d]/g, "");
+      const price = parseInt(priceText || '0');
+      const subtotal = price * data.new_qty;
+      row.querySelector(".subtotal").innerText = subtotal.toLocaleString("vi-VN") + "₫";
 
-  let qty = parseInt(input.value) || 1;
-  qty = Math.max(1, qty + delta);
-  input.value = qty;
-
-  const subtotal = price * qty;
-  row.querySelector(".subtotal").innerText = subtotal.toLocaleString("vi-VN") + "₫";
-  
-  // đã sửa dòng: Chỉ cập nhật tổng nếu checkbox được chọn
-  if (checkbox.checked) {
-    updateTotal();
-  }
+      updateTotal();
+    }
+  })
+  .catch(() => alert("Lỗi kết nối. Vui lòng thử lại."));
 }
+
 
 function updateTotal() {
   let total = 0;

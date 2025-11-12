@@ -39,11 +39,11 @@ class CustomUserCreationForm(UserCreationForm):
         username = self.cleaned_data.get('username', '').lower()
         email = self.cleaned_data.get('email', '').lower()
 
-        # 1️⃣ Độ dài ít nhất 8 ký tự
+        # 1 Độ dài ít nhất 8 ký tự
         if len(password) < 8:
             raise forms.ValidationError("Mật khẩu phải có ít nhất 8 ký tự.")
 
-        # 2️⃣ Không quá giống thông tin cá nhân
+        # 2 Không quá giống thông tin cá nhân
         similar_parts = []
         if username:
             similar_parts.append(username)
@@ -53,11 +53,11 @@ class CustomUserCreationForm(UserCreationForm):
             if len(part) >= 3 and part in password.lower():
                 raise forms.ValidationError("Mật khẩu quá giống tên đăng nhập hoặc email.")
 
-        # 3️⃣ Không thuộc danh sách mật khẩu phổ biến
+        # 3 Không thuộc danh sách mật khẩu phổ biến
         if password.lower() in COMMON_PASSWORDS:
             raise forms.ValidationError("Mật khẩu quá phổ biến, vui lòng chọn mật khẩu mạnh hơn.")
 
-        # 4️⃣ Không hoàn toàn là số
+        # 4 Không hoàn toàn là số
         if password.isdigit():
             raise forms.ValidationError("Mật khẩu không được chỉ toàn là số.")
 

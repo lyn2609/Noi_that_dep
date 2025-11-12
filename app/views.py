@@ -147,29 +147,38 @@ def remove_from_cart(request, product_id):
 # đã sửa
 def update_cart(request):
     if request.method == 'POST':
-        cart = {}
-        selected_items = request.POST.getlist('selected_items')  # Lấy danh sách sản phẩm được chọn
-        
-        # Chỉ lưu những sản phẩm được tích chọn
+        cart = _get_cart(request)
+        selected_items = request.POST.getlist('selected_items')  # các sản phẩm được chọn
+        checkout_items = {}  # session tạm lưu các sản phẩm được chọn để thanh toán
+
+        # Cập nhật số lượng trong cart (nếu có)
         for k, v in request.POST.items():
             if k.startswith('qty_'):
                 pid = k[4:]
-                # Chỉ lưu nếu sản phẩm được chọn
-                if pid in selected_items:
-                    try:
-                        qty = int(v)
-                        if qty > 0:
-                            cart[str(pid)] = qty
-                    except ValueError:
-                        pass
+                try:
+                    qty = int(v)
+                    if qty > 0:
+                        cart[str(pid)] = qty
+                except ValueError:
+                    pass
 
         _save_cart(request, cart)
 
-        # ✅ Chuyển đến checkout nếu bấm thanh toán
+        # Chỉ tạo danh sách thanh toán riêng, KHÔNG xoá sản phẩm khác
+        for pid in selected_items:
+            if pid in cart:
+                checkout_items[pid] = cart[pid]
+
+        # Lưu danh sách được chọn vào session riêng
+        request.session['checkout_items'] = checkout_items
+        request.session.modified = True
+
+        # Nếu người dùng bấm "Thanh toán"
         if request.POST.get('go') == 'checkout' and selected_items:
             return redirect('checkout')
 
     return redirect('view_cart')
+
 
 
 def change_qty(request, product_id):
@@ -191,7 +200,7 @@ def change_qty(request, product_id):
         request.session["cart"] = cart
         request.session.modified = True
 
-        # ✅ nếu là AJAX (fetch)
+        # nếu là AJAX (fetch)
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({"success": True, "new_qty": current_qty})
         
@@ -240,7 +249,7 @@ def clear_buy_now(request):
 
 def custom_logout(request):
     logout(request)  # xóa session đăng nhập
-    request.session.flush() # ✅ Xoá toàn bộ session (cart, buy_now, v.v.)
+    request.session.flush() # Xoá toàn bộ session (cart, buy_now, v.v.)
     return redirect('home')  # chuyển về trang đăng nhập
 
 
@@ -295,7 +304,7 @@ def buy_now(request, product_id):
         'id': product.id,
         'name': product.name,
         'price': float(product.price),
-        'qty': qty,  # ✅ Lưu số lượng vào session
+        'qty': qty,  # Lưu số lượng vào session
     }
 
     return redirect('checkout')
@@ -305,19 +314,19 @@ def buy_now(request, product_id):
 @login_required
 @transaction.atomic
 def checkout(request):
-    # 🔹 XÁC ĐỊNH NGUỒN: kiểm tra xem có phải từ giỏ hàng không
+    # XÁC ĐỊNH NGUỒN: kiểm tra xem có phải từ giỏ hàng không
     # Bằng cách kiểm tra referer hoặc session
     referer = request.META.get('HTTP_REFERER', '')
     from_cart = '/cart/' in referer or 'cart' in referer
     
-    # 🔹 QUAN TRỌNG: Nếu đến từ giỏ hàng, XOÁ session mua ngay
+    # Nếu đến từ giỏ hàng, XOÁ session mua ngay
     if from_cart and 'buy_now_item' in request.session:
         del request.session['buy_now_item']
         request.session.modified = True
     
     buy_now_item = request.session.get('buy_now_item')
     
-    # 🔹 Xác định nguồn dữ liệu: MUA NGAY hay GIỎ HÀNG
+    # Xác định nguồn dữ liệu: MUA NGAY hay GIỎ HÀNG
     if buy_now_item and not from_cart:
         # Nếu là mua ngay
         product = get_object_or_404(Product, id=buy_now_item['id'])
@@ -336,10 +345,25 @@ def checkout(request):
             messages.warning(request, 'Giỏ hàng trống.')
             return redirect('products')
         
-        items, subtotal = _cart_totals(request)
+        # Lấy chỉ các sản phẩm đã chọn để thanh toán
+        checkout_items = request.session.get('checkout_items', {})
+        if not checkout_items:
+            messages.warning(request, 'Bạn chưa chọn sản phẩm để thanh toán.')
+            return redirect('view_cart')
+
+
+        items, subtotal = [], Decimal('0')
+        for pid, qty in checkout_items.items():
+            try:
+                product = Product.objects.get(pk=int(pid))
+                line = Decimal(product.price) * qty
+                items.append({'product': product, 'qty': qty, 'subtotal': line})
+                subtotal += line
+            except Product.DoesNotExist:
+                continue
         source = 'cart'
 
-    # 🔹 Khi người dùng gửi form thanh toán
+    # Khi người dùng gửi form thanh toán
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
@@ -379,18 +403,27 @@ def checkout(request):
                     line_total=p.price * Decimal(qty)
                 )
 
-            # ✅ Xóa session SAU KHI tạo đơn hàng thành công
+            # Xóa session sau khi tạo đơn hàng thành công
             if source == 'buy_now' and 'buy_now_item' in request.session:
                 del request.session['buy_now_item']
             
             if source == 'cart':
-                _save_cart(request, {})
+                cart = _get_cart(request)
+                checkout_items = request.session.get('checkout_items', {})
+
+                # Xoá các sản phẩm đã thanh toán khỏi giỏ
+                for pid in checkout_items.keys():
+                    cart.pop(pid, None)
+
+                _save_cart(request, cart)
+                request.session.pop('checkout_items', None)
+
 
             return redirect('checkout_success', order_number=order.order_number)
     else:
         form = CheckoutForm()
 
-    # 🔹 Trả về giao diện checkout
+    #  Trả về giao diện checkout
     return render(request, 'checkout/checkout.html', {
         'items': items,
         'subtotal': subtotal,
